@@ -1,0 +1,12 @@
+services:
+  api_core:
+    image: float-mcp-server:dev
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ../src:/root/src
+    environment:
+      - FLOAT_ACCESS_TOKEN=$FLOAT_ACCESS_TOKEN
+    ports:
+      - 8000:8000

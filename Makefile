@@ -1,4 +1,4 @@
-.PHONY: ruff clean
+.PHONY: ruff clean build run
 
 ruff:
 	uv run ruff format
@@ -11,3 +11,9 @@ clean:
 	find . -name '__pycache__' -exec rm -fr {} + || true
 	find . -name '.pytest_cache' -exec rm -fr {} + || true
 	uv run ruff clean
+
+build:
+	docker compose -f docker/docker-compose.yaml build
+
+run: build
+	docker compose -f docker/docker-compose.yaml up

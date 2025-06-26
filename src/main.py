@@ -17,7 +17,6 @@ logger = setup_logging()
 ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
 
 FLOAT_ACCESS_TOKEN = os.getenv("FLOAT_ACCESS_TOKEN")
-TEST_EMAIL = os.getenv("TEST_EMAIL")
 
 
 @asynccontextmanager
