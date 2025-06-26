@@ -112,11 +112,25 @@ wheels = [
 ]
 
 [[package]]
+name = "float-api"
+version = "0.0.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d5/f4/1a1ec7ff0be91a46fbbd96c1e157eefd0bdea16f32570ce8f6ef8fc36012/float_api-0.0.15.tar.gz", hash = "sha256:99f7dcfe3b641899aa3c65171a28c103ccc45e0e749beab0d2642f0b9f358ab3", size = 10783, upload-time = "2024-01-10T22:41:37.1Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5f/ed/1d0c7732552da0e5464fa970e7b457e6f55167c4cb6ca6512cde9556f07f/float_api-0.0.15-py3-none-any.whl", hash = "sha256:bc62cf1dfc775397cd3a3f4b4427ff67bdb18096b3387587f9e5404add1ef19b", size = 6710, upload-time = "2024-01-10T22:41:35.438Z" },
+]
+
+[[package]]
 name = "float-mcp-server"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi-mcp" },
+    { name = "float-api" },
 ]
 
 [package.dev-dependencies]
@@ -125,7 +139,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "fastapi-mcp", specifier = ">=0.3.4" }]
+requires-dist = [
+    { name = "fastapi-mcp", specifier = ">=0.3.4" },
+    { name = "float-api", specifier = ">=0.0.15" },
+]
 
 [package.metadata.requires-dev]
 dev = [{ name = "ruff", specifier = ">=0.12.0" }]

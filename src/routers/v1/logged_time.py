@@ -1,17 +1,14 @@
-from fastapi import APIRouter, status, Body
+from fastapi import APIRouter, status, Body, Request, Query
 from fastapi.responses import JSONResponse
-import httpx
-import os
+
+from typing import Annotated
 
 from src.utils import setup_logging
 from src.routers.schema import LoggedTimeCreate, LoggedTimeResponse
+from float_api import FloatAPI
+import os
 
 logger = setup_logging()
-
-
-BASE_ENDPOINT = "https://api.float.com/v3"
-FLOAT_ACCESS_TOKEN = os.getenv("FLOAT_ACCESS_TOKEN")
-TEST_EMAIL = os.getenv("TEST_EMAIL")
 
 router = APIRouter(
     responses={
@@ -46,67 +43,63 @@ router = APIRouter(
 )
 
 
-async def get_people_id(email: str) -> int:
+async def get_people_id(float_client: FloatAPI, email: str) -> int:
     """Fetch the people ID from the Float API.
 
     Returns:
         int: Sample people ID
     """
-    logger.info(
-        f"Request to Float API: {BASE_ENDPOINT}/people?email={email}",
-        extra={"email": email},
+
+    people = float_client._get_all_pages(
+        "people",
+        [],
+        {"email": os.getenv("TEST_EMAIL"), "fields": "people_id,name,email"},
     )
 
-    async with httpx.AsyncClient(
-        headers={
-            "Authorization": f"Bearer {FLOAT_ACCESS_TOKEN}",
-        }
-    ) as client:
-        api_response = await client.get(f"{BASE_ENDPOINT}/people?email={email}")
-        response = api_response.json()
+    logger.info(
+        f"Fetched people from Float API: {people}",
+        extra={"people": people},
+    )
 
-    if response:
-        return response[0]["people_id"]
+    if people:
+        return people[0]["people_id"]
     else:
-        logger.exception(f"No people found for email: {email}")
-        raise ValueError("No people found for the provided email.")
+        logger.exception("No people found for the given email.", extra={"email": email})
+        raise ValueError("No people found for the given email.")
 
 
 @router.get(
     "/logged-time", response_model=LoggedTimeResponse, status_code=status.HTTP_200_OK
 )
-async def get_logged_time() -> JSONResponse:
+async def get_logged_time(
+    request: Request, email: Annotated[str, Query(...)]
+) -> JSONResponse:
     """Get a logged time entry.
+
+    Args:
+        email (str): The email address to fetch logged time for.
 
     Returns:
         JSONResponse: 200 status with the logged time entry
     """
-
-    people_id = await get_people_id(TEST_EMAIL)
+    float_client: FloatAPI = request.app.state.float_client
+    people_id = await get_people_id(float_client, email)
 
     logger.info(
         f"Fetching logged time for people_id: {people_id}",
         extra={"people_id": people_id},
     )
 
-    async with httpx.AsyncClient(
-        headers={"Authorization": f"Bearer {FLOAT_ACCESS_TOKEN}"}
-    ) as client:
-        api_response = await client.get(
-            f"{BASE_ENDPOINT}/logged-time?people_id={people_id}"
-        )
-        response = api_response.json()
+    logged_time = float_client.get_all_logged_time(people_id=people_id)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=response,
-    )
+    return JSONResponse(status_code=status.HTTP_200_OK, content=logged_time)
 
 
 @router.post(
     "/logged-time", response_model=LoggedTimeResponse, status_code=status.HTTP_200_OK
 )
 async def create_logged_time(
+    request: Request,
     body: LoggedTimeCreate = Body(
         ...,
         example={
