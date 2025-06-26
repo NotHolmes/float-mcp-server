@@ -19,7 +19,6 @@ class LoggedTimeResponse(LoggedTimeCreate):
     logged_time_id: str
     billable: Optional[int] = None
     locked: Optional[int] = 0
-    locked_date: Optional[str] = None
     created: Optional[str] = None
     created_by: Optional[int] = None
     modified: Optional[str] = None

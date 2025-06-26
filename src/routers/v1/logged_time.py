@@ -2,11 +2,11 @@ from fastapi import APIRouter, status, Body, Request, Query
 from fastapi.responses import JSONResponse
 
 from typing import Annotated
+from datetime import date
 
 from src.utils import setup_logging
 from src.routers.schema import LoggedTimeCreate, LoggedTimeResponse
 from float_api import FloatAPI
-import os
 
 logger = setup_logging()
 
@@ -49,11 +49,10 @@ async def get_people_id(float_client: FloatAPI, email: str) -> int:
     Returns:
         int: Sample people ID
     """
-
-    people = float_client._get_all_pages(
+    people = float_client._get(
         "people",
         [],
-        {"email": os.getenv("TEST_EMAIL"), "fields": "people_id,name,email"},
+        {"email": email, "fields": "people_id,name,email"},
     )
 
     logger.info(
@@ -72,7 +71,10 @@ async def get_people_id(float_client: FloatAPI, email: str) -> int:
     "/logged-time", response_model=LoggedTimeResponse, status_code=status.HTTP_200_OK
 )
 async def get_logged_time(
-    request: Request, email: Annotated[str, Query(...)]
+    request: Request,
+    email: Annotated[str, Query(...)],
+    start_date: Annotated[date | None, Query()] = None,
+    end_date: Annotated[date | None, Query()] = None,
 ) -> JSONResponse:
     """Get a logged time entry.
 
@@ -90,7 +92,16 @@ async def get_logged_time(
         extra={"people_id": people_id},
     )
 
-    logged_time = float_client.get_all_logged_time(people_id=people_id)
+    logged_time = float_client._get(
+        "logged-time",
+        [],
+        {
+            "people_id": people_id,
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": end_date.isoformat() if end_date else None,
+            "fields": "logged_time_id,date,hours,notes,task_id,task_name,billable,locked,created",
+        },
+    )
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=logged_time)
 
@@ -105,7 +116,6 @@ async def create_logged_time(
         example={
             "people_id": 1,
             "date": "2025-06-26",
-            "reference_date": None,
             "hours": 8.0,
             "notes": "Worked on feature X",
             "project_id": 42,
