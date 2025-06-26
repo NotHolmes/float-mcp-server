@@ -7,6 +7,7 @@ from datetime import date
 from src.utils import setup_logging
 from src.routers.schema import LoggedTimeCreate, LoggedTimeResponse
 from float_api import FloatAPI
+from src.float import get_people_id
 
 logger = setup_logging()
 
@@ -43,30 +44,6 @@ router = APIRouter(
 )
 
 
-async def get_people_id(float_client: FloatAPI, email: str) -> int:
-    """Fetch the people ID from the Float API.
-
-    Returns:
-        int: Sample people ID
-    """
-    people = float_client._get(
-        "people",
-        [],
-        {"email": email, "fields": "people_id,name,email"},
-    )
-
-    logger.info(
-        f"Fetched people from Float API: {people}",
-        extra={"people": people},
-    )
-
-    if people:
-        return people[0]["people_id"]
-    else:
-        logger.exception("No people found for the given email.", extra={"email": email})
-        raise ValueError("No people found for the given email.")
-
-
 @router.get(
     "/logged-time", response_model=LoggedTimeResponse, status_code=status.HTTP_200_OK
 )
@@ -85,7 +62,7 @@ async def get_logged_time(
         JSONResponse: 200 status with the logged time entry
     """
     float_client: FloatAPI = request.app.state.float_client
-    people_id = await get_people_id(float_client, email)
+    people_id = get_people_id(float_client, email)
 
     logger.info(
         f"Fetching logged time for people_id: {people_id}",
@@ -99,7 +76,7 @@ async def get_logged_time(
             "people_id": people_id,
             "start_date": start_date.isoformat() if start_date else None,
             "end_date": end_date.isoformat() if end_date else None,
-            "fields": "logged_time_id,date,hours,notes,task_id,task_name,billable,locked,created",
+            "fields": "logged_time_id,project_id,date,hours,notes,task_id,task_name,billable,locked,created",
         },
     )
 
