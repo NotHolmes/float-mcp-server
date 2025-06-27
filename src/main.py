@@ -8,7 +8,7 @@ from src.routers import health
 from src.routers.v1 import logged_time
 from src.utils import setup_logging
 
-from float_api import FloatAPI
+from src.float import FloatClient
 
 import os
 
@@ -26,8 +26,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     Args:
         app (FastAPI): The FastAPI application instance.
     """
-    app.state.float_client = FloatAPI(
-        FLOAT_ACCESS_TOKEN, "FLOAT_MCP_SERVER", "float_mcp@example.com"
+    app.state.float_client = FloatClient(
+        access_token=FLOAT_ACCESS_TOKEN,
+        application_name="Float MCP Server",
+        contact_email="float_mcp@example.com",
     )
 
     yield
