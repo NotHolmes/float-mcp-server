@@ -80,3 +80,31 @@ class FloatClient:
                 "task_name": body.task_name,
             },
         )
+
+    def get_projects(self) -> dict:
+        """Fetch all projects from the Float API.
+
+        Returns:
+            dict: All projects.
+        """
+        return self.float_client._get(
+            "projects",
+            [],
+            {
+                "expand": "project_tasks,project_team",
+                "fields": "project_id,name,project_tasks,project_team",
+            },
+        )
+
+    def is_people_in_project(self, project: dict, people_id: int) -> bool:
+        """Check if a people_id is part of a project's team.
+
+        Args:
+            project (dict): The project dictionary.
+            people_id (int): The ID of the person to check.
+
+        Returns:
+            bool: True if people_id is in the project's team, False otherwise.
+        """
+        team = project.get("project_team", [])
+        return any(member.get("people_id") == people_id for member in team)
