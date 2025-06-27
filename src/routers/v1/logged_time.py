@@ -96,10 +96,7 @@ async def create_logged_time(
             "hours": 8.0,
             "notes": "Worked on feature X",
             "project_id": 42,
-            "phase_id": 0,
-            "task_id": None,
             "task_name": None,
-            "task_meta_id": None,
         },
     ),
 ) -> JSONResponse:
@@ -108,17 +105,23 @@ async def create_logged_time(
     Returns:
         JSONResponse: 200 status with the created logged time entry
     """
-    response = {
-        "logged_time_id": "abc123",
-        **body.dict(),
-        "billable": 1,
-        "locked": 0,
-        "locked_date": None,
-        "created": "2025-06-26T10:52:21Z",
-        "created_by": 1,
-        "modified": "2025-06-26T10:52:21Z",
-        "modified_by": 1,
-    }
+
+    float_client: FloatAPI = request.app.state.float_client
+
+    logger.info(f"Creating logged time entry for {body}")
+
+    response = float_client._post(
+        "logged-time",
+        {
+            "project_id": body.project_id,
+            "date": body.date,
+            "hours": body.hours,
+            "people_id": body.people_id,
+            "notes": body.notes,
+            "task_name": body.task_name,
+        },
+    )
+
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=response,
