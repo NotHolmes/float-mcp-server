@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Callable
+from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.routers import health
@@ -9,6 +9,7 @@ from src.routers.v1 import logged_time
 from src.utils import setup_logging
 
 from src.float import FloatClient
+from fastmcp import FastMCP
 
 import os
 
@@ -35,27 +36,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     yield
 
 
-app = FastAPI(title="Float MCP Server", lifespan=lifespan)
-app.add_middleware(
+api_app = FastAPI(title="Float API Server", lifespan=lifespan)
+api_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=ALLOW_METHODS,
     allow_headers=["*"],
 )
-app.include_router(health.router)
-app.include_router(logged_time.router, prefix="/v1")
+api_app.include_router(health.router)
+api_app.include_router(logged_time.router, prefix="/v1")
 
+mcp_app = FastMCP.from_fastapi(api_app).http_app(stateless_http=True)
 
-@app.middleware("http")
-async def add_custom_data(request: Request, call_next: Callable) -> Response:
-    """Middleware to add custom data to each incoming request if it doesn't exist.
+app = FastAPI(
+    title="Float MCP",
+    lifespan=mcp_app.lifespan,
+)
 
-    Args:
-        request (Request): The incoming request object.
-        call_next (Callable): The function to call the next middleware in the chain.
-
-    Returns:
-        Response: The response object.
-    """
-    response = await call_next(request)
-    return response
+app.mount("/mcp", mcp_app)  # mcp is at /mcp
+app.mount("/", api_app)

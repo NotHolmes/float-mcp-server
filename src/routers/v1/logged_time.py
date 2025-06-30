@@ -7,6 +7,7 @@ from datetime import date
 from src.utils import setup_logging
 from src.routers.schema import LoggedTimeCreate, LoggedTimeResponse
 from src.float import FloatClient
+import os
 
 logger = setup_logging()
 
@@ -63,7 +64,11 @@ async def get_logged_time(
     Returns:
         JSONResponse: 200 status with the logged time entry
     """
-    float_client: FloatClient = request.app.state.float_client
+    float_client = FloatClient(
+        access_token=os.getenv("FLOAT_ACCESS_TOKEN"),
+        application_name="Float MCP Server",
+        contact_email="float_mcp@example.com",
+    )
     people_id = float_client.get_people_id(email)
 
     logger.info(
@@ -99,7 +104,11 @@ async def create_logged_time(
         JSONResponse: 200 status with the created logged time entry
     """
 
-    float_client: FloatClient = request.app.state.float_client
+    float_client = FloatClient(
+        access_token=os.getenv("FLOAT_ACCESS_TOKEN"),
+        application_name="Float MCP Server",
+        contact_email="float_mcp@example.com",
+    )
 
     logger.info(f"Creating logged time entry for {body}")
 
